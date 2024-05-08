@@ -51,6 +51,8 @@ void main(void)
 	vec3 u = velocity;             // u is the initial velocity
 	vec3 F = gravity *  m - c * u;  // F is the force on the mass
 	bool fixed_node = true;        // Becomes false when force is applied
+
+	vec3 wind_direction = vec3(-0.01, 0.001, 0.01) + vec3(sin(ciElapsedSeconds)*0.01, 0.0, sin(ciElapsedSeconds)*0.001);
 	
 	for( int i = 0; i < 4; i++) {
 		if( connection[i] != -1 ) {
@@ -59,10 +61,11 @@ void main(void)
 			vec3 d = q - p;
 			float x = length(d);
 			F += -k * (rest_length - x) * normalize(d);
+			if (wind) F += wind_direction * m - c * u;
 			fixed_node = false;
 		}
 	}
-	
+
 	// If this is a fixed node, reset force to zero
 	if( fixed_node ) {
 		F = vec3(0.0);
