@@ -1,0 +1,5 @@
+include/
+lib/
+vc2019/.vs/
+vc2019/build/
+vc2019/enc_temp_folder/
