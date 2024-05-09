@@ -97,8 +97,38 @@ vec3 getContractionForceFieldInfluence(vec3 pos){
 	return totalForce;
 }
 
-vec3 getDragForce(vec3 velocity){
-	return velocity * velocity * DragCoefficient;
+vec3 getDragForce(vec3 velocity) {
+	return velocity * velocity * DragCoefficient * 0.005;
+}
+
+bool collisionDetected(vec3 pos) {
+	bool collision = false;
+	for (int i = 0; i < numCuboidObstacles; ++i) {
+		cuboidObstacle obs = cuboidObstacles[i];
+		vec3 obsMin = obs.pos, obsMax = obs.pos + obs.size;
+		if (pos.x >= obsMin.x && pos.x <= obsMax.x &&
+			pos.y >= obsMin.y && pos.y <= obsMax.y &&
+			pos.z >= obsMin.z && pos.z <= obsMax.z) collision = true;
+	}
+	return collision;
+}
+
+vec3 getCollisionVelocityComponents(vec3 pos) {
+
+	for (int i = 0; i < numCuboidObstacles; ++i) {
+		cuboidObstacle obs = cuboidObstacles[i];
+		vec3 obsMin = obs.pos, obsMax = obs.pos + obs.size;
+
+		if (pos.x >= obsMin.x + 0.1 && pos.x <= obsMax.x - 0.1 &&
+			pos.y >= obsMin.y + 0.1 && pos.y <= obsMax.y  - 0.1 &&
+			pos.z >= obsMin.z + 0.1 && pos.z <= obsMax.z  - 0.1) Position = vec3(pos.x, -100, pos.z); // Out of view
+
+		if( pos.y < obsMax.y &&
+			pos.x > obsMin.x + 0.05 && pos.x < obsMax.x -0.05 &&
+			pos.x > obsMin.x +0.05 && pos.x < obsMax.x -0.05) return vec3(Velocity.x * ParticleBounciness, -Velocity.y * ParticleBounciness, Velocity.z * ParticleBounciness);
+	}
+
+	return vec3(-Velocity.x * ParticleBounciness, Velocity.y, -Velocity.z * ParticleBounciness );
 }
 
 // Gravity
@@ -107,12 +137,17 @@ uniform vec3 gravity = vec3(0.0, -10.0, 0.0);
 void main() {
 	// Update position & velocity for next frame
 	Position = VertexPosition;
+
 	Velocity = VertexVelocity + gravity * H;
 	Velocity += getDirectionalForceFieldInfluence(Position) * H;
 	Velocity += getExpansionForceFieldInfluence(Position) * H;
 	Velocity += getContractionForceFieldInfluence(Position) * H;
 	vec3 dragForce = getDragForce(Velocity);
 	Velocity += dragForce;
+
+	if (collisionDetected(Position)) {
+		Velocity = getCollisionVelocityComponents(Position);
+	}
 	StartTime = VertexStartTime;
 
 	if( Time >= StartTime ) {
@@ -128,10 +163,8 @@ void main() {
 		else {
 			// The particle is alive, update.
 			vec3 oldPos = Position;
-			Position += Velocity * H;
-			//todo Task2: (you can also define your own function/s)
-			//todo Task3 & 4: Add your collision detection functions here
 
+			Position += Velocity * H;
 		}
 	}
 }
